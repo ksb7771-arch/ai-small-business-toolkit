@@ -1,0 +1,204 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restaurant Profit Calculator | AI Small Business Toolkit</title>
+<style>
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #18312c;
+  background: #f4f7f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 960px; margin: auto; padding: 32px 18px 60px; }
+header { margin-bottom: 28px; }
+.eyebrow { color: #397a62; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+h1 { font-size: clamp(28px, 5vw, 42px); margin: 12px 0; }
+h2 { font-size: 20px; margin-top: 0; }
+p { color: #65736d; line-height: 1.6; }
+.card {
+  background: white;
+  border: 1px solid #e0e9e4;
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 24px #18312c08;
+}
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+label { display: block; font-size: 14px; font-weight: 600; }
+input {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 13px;
+  border: 1px solid #d4ded8;
+  border-radius: 10px;
+  font: inherit;
+}
+input:focus { outline: 2px solid #398c6b; }
+.results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.metric { background: #edf5f0; padding: 18px; border-radius: 12px; }
+.metric span { display: block; font-size: 13px; color: #526b60; }
+.metric strong { display: block; margin-top: 8px; font-size: 23px; overflow-wrap: anywhere; }
+.profit { background: #d9f1e3; }
+.negative { background: #fce3e3; }
+.bar-row { margin: 18px 0; }
+.bar-label { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.track { height: 13px; background: #edf1ee; border-radius: 20px; overflow: hidden; margin-top: 8px; }
+.fill { height: 100%; background: #4d9676; border-radius: 20px; transition: width .2s; }
+.note { font-size: 13px; }
+footer { font-size: 13px; color: #7b8982; text-align: center; margin-top: 25px; }
+@media(max-width: 620px) {
+  .grid, .results { grid-template-columns: 1fr; }
+  .card { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">AI SMALL BUSINESS TOOLKIT · FREE TOOL #01</div>
+  <h1>Restaurant Profit Calculator</h1>
+  <p>Estimate your monthly operating profit in seconds. No account, no uploads, and no data leaves your browser.</p>
+</header>
+
+<section class="card">
+  <h2>Monthly figures</h2>
+  <p>Enter your restaurant's monthly revenue and operating costs in Korean won (KRW).</p>
+  <div class="grid">
+    <label>Revenue (₩)
+      <input id="revenue" type="number" min="0" step="1000" value="50000000">
+    </label>
+    <label>Food & beverage costs (₩)
+      <input id="food" type="number" min="0" step="1000" value="15000000">
+    </label>
+    <label>Labor costs (₩)
+      <input id="labor" type="number" min="0" step="1000" value="12000000">
+    </label>
+    <label>Rent (₩)
+      <input id="rent" type="number" min="0" step="1000" value="5000000">
+    </label>
+    <label>Other operating costs (₩)
+      <input id="other" type="number" min="0" step="1000" value="6000000">
+    </label>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Your monthly results</h2>
+  <div class="results">
+    <div class="metric">
+      <span>Total operating costs</span>
+      <strong id="total">₩0</strong>
+    </div>
+    <div class="metric profit" id="profitCard">
+      <span>Operating profit</span>
+      <strong id="profit">₩0</strong>
+    </div>
+    <div class="metric">
+      <span>Operating profit margin</span>
+      <strong id="margin">0%</strong>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Cost breakdown</h2>
+  <p>Each bar represents a percentage of monthly revenue.</p>
+  <div id="breakdown"></div>
+</section>
+
+<section class="card">
+  <h2>How to interpret your results</h2>
+  <p><strong>Operating profit</strong> is calculated by subtracting the entered operating costs from revenue.</p>
+  <p><strong>Operating profit margin</strong> shows how much of your revenue remains after those costs.</p>
+  <p class="note">This is a simplified planning tool, not an accounting statement. Taxes, depreciation, interest, owner compensation, and other expenses must be included in your inputs when relevant. Results are estimates.</p>
+</section>
+
+<footer>
+  Open source · MIT License · AI Small Business Toolkit
+</footer>
+</main>
+
+<script>
+const ids = ['revenue', 'food', 'labor', 'rent', 'other'];
+const names = {
+  food: 'Food & beverage',
+  labor: 'Labor',
+  rent: 'Rent',
+  other: 'Other operating costs'
+};
+const money = value => new Intl.NumberFormat('ko-KR', {
+  style: 'currency',
+  currency: 'KRW',
+  maximumFractionDigits: 0
+}).format(value);
+
+function calculate() {
+  const values = {};
+  ids.forEach(id => {
+    const input = document.getElementById(id);
+    const number = Number(input.value);
+    values[id] = Number.isFinite(number) ? Math.max(0, number) : 0;
+  });
+
+  const revenue = values.revenue;
+  const costs = values.food + values.labor + values.rent + values.other;
+  const profit = revenue - costs;
+  const margin = revenue > 0 ? (profit / revenue) * 100 : null;
+
+  document.getElementById('total').textContent = money(costs);
+  document.getElementById('profit').textContent = money(profit);
+  document.getElementById('margin').textContent =
+    margin === null ? 'N/A' : margin.toFixed(1) + '%';
+
+  const profitCard = document.getElementById('profitCard');
+  profitCard.classList.toggle('negative', profit < 0);
+  profitCard.classList.toggle('profit', profit >= 0);
+
+  const breakdown = document.getElementById('breakdown');
+  breakdown.innerHTML = '';
+
+  ['food', 'labor', 'rent', 'other'].forEach(id => {
+    const percentage = revenue > 0 ? values[id] / revenue * 100 : null;
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+
+    const label = document.createElement('div');
+    label.className = 'bar-label';
+
+    const name = document.createElement('span');
+    name.textContent = names[id];
+
+    const amount = document.createElement('strong');
+    amount.textContent = percentage === null
+      ? 'N/A'
+      : percentage.toFixed(1) + '%';
+
+    label.append(name, amount);
+
+    const track = document.createElement('div');
+    track.className = 'track';
+
+    const fill = document.createElement('div');
+    fill.className = 'fill';
+    fill.style.width = percentage === null
+      ? '0%'
+      : Math.min(100, percentage) + '%';
+
+    track.appendChild(fill);
+    row.append(label, track);
+    breakdown.appendChild(row);
+  });
+}
+
+ids.forEach(id => {
+  document.getElementById(id).addEventListener('input', calculate);
+});
+calculate();
+</script>
+</body>
+</html>
